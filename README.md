@@ -21,32 +21,41 @@ entregas, e um guia das salas do prédio.
 
 ## Como publicar uma alteração
 
-1. Edite `public/index.html`.
-2. Faça o deploy (requer login no Google dono do projeto):
+**Automático:** todo push nos branches `main` ou `claude/**` dispara o
+workflow [`deploy.yml`](.github/workflows/deploy.yml), que publica a pasta
+`public/` no Firebase Hosting. Ele exige o segredo `FIREBASE_SERVICE_ACCOUNT`
+no repositório (Settings → Secrets and variables → Actions), contendo o JSON
+de uma chave de conta de serviço do projeto (console do Firebase →
+Configurações do projeto → Contas de serviço → Gerar nova chave privada).
+Sem o segredo, o workflow apenas avisa e pula o deploy.
 
-   ```bash
-   npx firebase-tools login
-   npx firebase-tools deploy --only hosting
-   ```
+**Manual (alternativa):** com login no Google dono do projeto:
+
+```bash
+npx firebase-tools login
+npx firebase-tools deploy --only hosting
+```
 
 O `.firebaserc` já aponta para o projeto `fdusp-483f8`, e o `firebase.json`
 já configura a pasta `public/` como raiz do site.
+
+Há também o workflow [`resgatar-originais.yml`](.github/workflows/resgatar-originais.yml)
+(disparo manual), que baixa do site publicado o `index.html`, os ícones e o
+manifest e os grava no repositório — útil como conferência de que o
+repositório bate com o que está no ar. Atenção: ele sobrescreve os arquivos
+do repositório com a versão publicada; não o rode com alterações ainda não
+publicadas.
 
 ## Histórico da recuperação (ago/2026)
 
 A conversa original de desenvolvimento foi apagada por engano; o app em si
 nunca saiu do ar. Este repositório foi reconstruído a partir do código-fonte
-da versão publicada em `fdusp-483f8.web.app`, com duas ressalvas:
-
-- A fonte Montserrat embutida foi reconstituída a partir do pacote oficial
-  `@fontsource-variable/montserrat` (mesma fonte, pesos 400–700, subset
-  latino) — visualmente idêntica à original.
-- Os ícones (`icone.svg`, `icone-32.png`, `icone-192.png`, `icone-512.png`,
-  `apple-touch-icon.png`) e o `manifest.webmanifest` foram **recriados**
-  (capelo de formatura nas cores do app), pois os arquivos originais não
-  puderam ser baixados. Os originais continuam no ar no Hosting até o
-  próximo deploy — se quiser preservá-los, baixe-os do site publicado
-  antes de fazer um novo deploy.
+da versão publicada em `fdusp-483f8.web.app`. A reconstrução do
+`index.html` foi conferida contra o site no ar e ficou **byte a byte
+idêntica** ao original (a fonte Montserrat embutida veio do pacote oficial
+`@fontsource-variable/montserrat`, o mesmo usado na versão publicada). Os
+ícones e o `manifest.webmanifest` originais foram baixados do site pelo
+workflow de resgate.
 
 Os dados dos usuários ficam no Firestore e **não** são afetados por deploys
 do Hosting.
