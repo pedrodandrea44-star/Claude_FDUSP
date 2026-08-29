@@ -1,0 +1,33 @@
+name: Publicar no Firebase Hosting
+
+on:
+  push:
+    branches: ["main", "claude/**"]
+  workflow_dispatch:
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Conferir a chave de deploy
+        id: chave
+        env:
+          FSA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -n "$FSA" ]; then
+            echo "tem=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "tem=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Segredo FIREBASE_SERVICE_ACCOUNT ausente — deploy pulado. Crie o segredo em Settings > Secrets and variables > Actions com a chave de conta de serviço do Firebase (console do Firebase > Configurações do projeto > Contas de serviço > Gerar nova chave privada)."
+          fi
+
+      - name: Publicar no canal ao vivo
+        if: steps.chave.outputs.tem == 'true'
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          channelId: live
+          projectId: fdusp-483f8

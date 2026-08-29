@@ -1,0 +1,58 @@
+name: Resgatar arquivos originais do site
+
+# Roda só quando disparado manualmente: baixa do site publicado
+# (fdusp-483f8.web.app) o index.html, os ícones e o manifest originais
+# e grava tudo no repositório, garantindo recuperação byte a byte.
+on: workflow_dispatch
+
+permissions:
+  contents: write
+
+jobs:
+  resgatar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Baixar os arquivos publicados
+        run: |
+          BASE=https://fdusp-483f8.web.app
+          mkdir -p /tmp/originais
+          curl -fsSL "$BASE/index.html" -o /tmp/originais/index.html
+          for f in icone.svg icone-32.png apple-touch-icon.png manifest.webmanifest; do
+            curl -fsSL "$BASE/$f" -o "/tmp/originais/$f" || echo "::warning::$f não encontrado no site"
+          done
+          if [ -s /tmp/originais/manifest.webmanifest ]; then
+            for src in $(jq -r '.icons[]?.src // empty' /tmp/originais/manifest.webmanifest); do
+              caminho="${src%%\?*}"; caminho="${caminho#/}"
+              nome=$(basename "$caminho")
+              if [ ! -f "/tmp/originais/$nome" ]; then
+                curl -fsSL "$BASE/$caminho" -o "/tmp/originais/$nome" || echo "::warning::$caminho não encontrado no site"
+              fi
+            done
+          fi
+          ls -la /tmp/originais
+
+      - name: Comparar o original com a reconstrução (fonte embutida ignorada)
+        run: |
+          sed 's/base64,[^)]*/base64,.../g' public/index.html > /tmp/repo.html
+          sed 's/base64,[^)]*/base64,.../g' /tmp/originais/index.html > /tmp/orig.html
+          if diff -u /tmp/repo.html /tmp/orig.html > /tmp/dif.txt; then
+            echo "Reconstrução idêntica ao original (fora a fonte embutida)."
+          else
+            echo "Diferenças entre a reconstrução e o original:"
+            cat /tmp/dif.txt
+          fi
+
+      - name: Gravar os originais no repositório
+        run: |
+          cp -f /tmp/originais/* public/
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/
+          if git diff --cached --quiet; then
+            echo "Nada a alterar: o repositório já bate com o site publicado."
+          else
+            git commit -m "Restaura os arquivos originais baixados de fdusp-483f8.web.app"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
