@@ -1,0 +1,15 @@
+{
+  "name": "Graduação - FDUSP",
+  "short_name": "FDUSP",
+  "description": "Suas leituras, seu horário de aulas e sua agenda da graduação, sincronizados em todos os seus aparelhos.",
+  "lang": "pt-BR",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#171A21",
+  "theme_color": "#171A21",
+  "icons": [
+    { "src": "/icone-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icone-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icone.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
